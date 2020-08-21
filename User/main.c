@@ -26,7 +26,6 @@ uchar temp[3]={0};//flash暂存
 uchar exitst,checktmp;
 uchar flag;//tim_test
 
-
 //没有外接晶振所以采用的是内部晶振8M
 void BASIC_TIM_Config(void)
 {
@@ -44,7 +43,6 @@ void BASIC_TIM_Config(void)
 	TIM_ITConfig(TIM2,TIM_IT_Update,ENABLE);
 	TIM_ARRPreloadConfig(TIM2, DISABLE);
 }
-
 
 void FLASH_WriteByte(uint32_t addr , uchar *p)
 {
@@ -67,7 +65,6 @@ void FLASH_ReadByte(uint32_t addr , uchar *p )
 	while(n--)
 	{*(p++)=*((uchar*)addr++);}
 }
-
 
 static void NVIC_Configuration(void)
 {
