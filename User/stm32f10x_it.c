@@ -287,16 +287,7 @@ void BASIC_TIM_IRQHandler(void)
 	if ( TIM_GetITStatus( TIM2, TIM_IT_Update) != RESET ) 
 	{
 		adcount++;
-		if(adcount==4)
-		{
-			GPIO_SetBits(GPIOA, GPIO_Pin_12);
-		}
-		else if (adcount==3)
-		{
-			TIM_Cmd(TIM2, ENABLE);
-			GPIO_SetBits(GPIOA, GPIO_Pin_11);
-		}
-		else if (adcount==basictime)
+		if (adcount==basictime)
 		{
 			TIM_Cmd(TIM2, DISABLE);
 			adcount=0;

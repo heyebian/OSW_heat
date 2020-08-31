@@ -2,7 +2,7 @@
 #include "my_own.h"
 
 //适用于STM32F103C8T6
-//暂时最终版本
+//修改于2020/8/31
 //写入的起始地址和技术地址
 #define WRITE_START_ADDR ((uint32_t)0x08008000)
 #define WRITE_END_ADDR ((uint32_t)0x0800C000)
@@ -144,9 +144,9 @@ void USART_Config(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(DEBUG_USART_TX_GPIO_PORT, &GPIO_InitStructure);
 
-	//将USART Rx配置为浮空输入
+	//将USART Rx配置上拉输入
 	GPIO_InitStructure.GPIO_Pin = DEBUG_USART_RX_GPIO_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
 	GPIO_Init(DEBUG_USART_RX_GPIO_PORT, &GPIO_InitStructure);
 
 	//配置串口的工作参数
@@ -496,7 +496,7 @@ void init(void)
 	oswctlcomd=0;eepromupdate=0;readstcomd=0;readeepromcomd=0;
 	switchover=1;swtime=0;
 	rcount=0;comdok=0;    
-	adcount=0; basictime=5;
+	adcount=0; basictime=8;
 	FLASH_ReadByte(WRITE_START_ADDR,temp);
 	rbyte2=temp[0];
 	rbyte3=temp[1];
