@@ -2,11 +2,8 @@
 #include "my_own.h"
 
 //适用于STM32F103C8T6
-<<<<<<< HEAD
 //修改于2020/8/31
-=======
-
->>>>>>> parent of c2db00f... Update main.c
+//基本就是final了
 //写入的起始地址和技术地址
 #define WRITE_START_ADDR ((uint32_t)0x08008000)
 #define WRITE_END_ADDR ((uint32_t)0x0800C000)
@@ -474,7 +471,7 @@ void command_process()
 	GPIO_SetBits(GPIOA, GPIO_Pin_11);
 	TIM_Cmd(TIM2, ENABLE);
 	switchover=0;
-	GPIO_ResetBits(GPIOA, GPIO_Pin_12);
+	GPIO_SetBits(GPIOA, GPIO_Pin_12);
   }
 	else;
 	oswctlcomd=0;
