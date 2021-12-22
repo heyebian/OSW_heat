@@ -40,6 +40,7 @@ extern uchar sbyte1,sbyte2,sbyte3;
 extern uchar heat_time;
 extern uint16_t ADC_ConvertedValue;
 extern uchar adc_counter;
+uchar now_st,next_st;
 
 void d_ms(u16 time)
 {    
@@ -60,9 +61,9 @@ void d_us(u16 time)
 
 void Usart_SendByte_IN( USART_TypeDef * pUSARTx, uchar ch)
 {
-	//·¢ËÍÒ»¸ö×Ö½ÚÊý¾Ý
+	//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 	USART_SendData(pUSARTx,ch);
-	//µÈ´ý·¢ËÍ¼Ä´æÆ÷Îª¿Õ
+	//ï¿½È´ï¿½ï¿½ï¿½ï¿½Í¼Ä´ï¿½ï¿½ï¿½Îªï¿½ï¿½
 	while (USART_GetFlagStatus(pUSARTx, USART_FLAG_TXE) == RESET);
 }
 
@@ -156,7 +157,7 @@ void command_process_IN()
 	{GPIO_SetBits(IN1N);}
 	
 	GPIO_SetBits(GPIOA, GPIO_Pin_11);
-	GPIO_SetBits(GPIOA, GPIO_Pin_12);
+	//GPIO_SetBits(GPIOA, GPIO_Pin_12);
 	TIM_Cmd(TIM2, ENABLE);
 	
 	switchover=0;
@@ -165,36 +166,40 @@ void command_process_IN()
 	oswctlcomd=0;
  }
 
-//Íâ²¿ÖÐ¶Ï¹¦ÄÜ£¬¾¡Á¿²»ÒªÆôÓÃ¡£
-/*
+//ï¿½â²¿ï¿½Ð¶Ï¹ï¿½ï¿½Ü£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½ï¿½Ã¡ï¿½
+
 void EXTI15_10_IRQHandler(void)
 {
 	EXTI_InitTypeDef EXTI_InitStructure;
-	if (EXTI_GetITStatus(EXTI_Line13) != RESET) 
+	if (EXTI_GetITStatus(EXTI_Line12) != RESET) 
 		{
-			EXTI_InitStructure.EXTI_Line = EXTI_Line13;
+			EXTI_InitStructure.EXTI_Line = EXTI_Line12;
 			EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 			EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
 			EXTI_InitStructure.EXTI_LineCmd = DISABLE;
 			EXTI_Init(&EXTI_InitStructure);
 			d_ms(100);
 			oswctlcomd=1;
-			if (exitst==0){exitst=1;}
-			else {exitst=0;}
-			if (exitst==0){rbyte2=0x00;rbyte3=0x00;oswst1=0x00;oswst2=0x00;}
-			else {rbyte2=0xff;rbyte3=0xff;oswst1=0xff;oswst2=0xff;} 
-			EXTI_InitStructure.EXTI_Line = EXTI_Line13;
+			now_st = oswst2 & 0x3f;
+			if (now_st == 63)
+			{next_st = 0;}
+			else {next_st = now_st+1;}
+			rbyte2=(next_st & 0x3C)>>2;
+			rbyte3=(next_st & 0x3F)|(next_st << 6);
+			if(oswctlcomd==1)
+			{command_process_IN();}
+			EXTI_InitStructure.EXTI_Line = EXTI_Line12;
 			EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 			EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
 			EXTI_InitStructure.EXTI_LineCmd = ENABLE;
 			EXTI_Init(&EXTI_InitStructure);
-			EXTI_ClearITPendingBit(EXTI_Line13);
+			EXTI_ClearITPendingBit(EXTI_Line12);
 	}
 }
-*/
 
 
-//´®¿ÚÍ¨ÐÅ¹¦ÄÜ
+
+//ï¿½ï¿½ï¿½ï¿½Í¨ï¿½Å¹ï¿½ï¿½ï¿½
 void DEBUG_USART_IRQHandler(void)
 {
 	uint8_t tem;
@@ -513,7 +518,7 @@ void BASIC_TIM_IRQHandler(void)
 			adcount=0;
 			close_all();
 			GPIO_ResetBits(GPIOA, GPIO_Pin_11);
-			GPIO_ResetBits(GPIOA, GPIO_Pin_12);
+			//GPIO_ResetBits(GPIOA, GPIO_Pin_12);
 			swtime=swtime+1;
 			switchover=1;
 			GPIO_ResetBits(GPIOA, GPIO_Pin_11);

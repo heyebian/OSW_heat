@@ -188,7 +188,7 @@ static void NVIC_Configuration(void)
 	//��ʼ������NVIC
 	NVIC_Init(&NVIC_InitStructure);
 	
-	/*
+
 	//�����ж�Դ
 	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
 	//��ռ���ȼ�Ϊ1
@@ -196,15 +196,15 @@ static void NVIC_Configuration(void)
 	//�����ȼ�Ϊ1
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
 	//ʹ���ж�
-	NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	//��ʼ������NVIC
 	NVIC_Init(&NVIC_InitStructure);
-	*/
+
 }
 
 
 //�ⲿ�ж�����
-/*
+
 void EXTI_Key_Config(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -214,18 +214,18 @@ void EXTI_Key_Config(void)
 	//NVIC����
 	NVIC_Configuration();
 	//��������
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	//�ж�����
-	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA,	GPIO_PinSource13);
-	EXTI_InitStructure.EXTI_Line = EXTI_Line13;
+	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA,	GPIO_PinSource12);
+	EXTI_InitStructure.EXTI_Line = EXTI_Line12;
 	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
 	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
 	EXTI_Init(&EXTI_InitStructure);
 }
-*/
+
 
 void USART_Config(void)
 {
@@ -485,13 +485,13 @@ void GPIO_CONFIG(void)
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	
+/*
 	//ͬ���źŶ˿�
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
+*/
 /* TX����
 	//synp
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_9;
@@ -659,6 +659,7 @@ void init(void)
 	RCC_Configuration();
 	GPIO_CONFIG();
 	BASIC_TIM_Config();
+	EXTI_Key_Config();
 	USART_Config();
 	ADC_Config();
 	GPIO_ResetBits(GPIOA, GPIO_Pin_11);
