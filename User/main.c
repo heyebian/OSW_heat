@@ -1,40 +1,40 @@
 #include "stm32f10x.h"
 #include "my_own.h"
 
-//ÊÊÓÃÓÚSTM32F103CBU6
-//ÐÞ¸ÄÓÚ2021/11/20£¨Ôö¼ÓÁËÎÂ¶È´«¸ÐÆ÷¿ØÖÆ¹¦ÄÜ£©
-//ÐÞ¸ÄÓÚ2021/11/16£¨Ôö¼ÓÁËheat¹¦ÄÜ£¬Î´¾­²âÊÔ£©
-//ÐÞ¸ÄÓÚ2021/11/1£¨½«ÄÚ²¿8M·ÖÆµ³É64M£©
-//ÊÊÓÃÓÚ¶à»úÍ¨ÐÅ°æ±¾
-//»ù±¾¾ÍÊÇfinalÁË/²¢²»ÊÇ
-//Ð´ÈëµÄÆðÊ¼µØÖ·ºÍ¼¼ÊõµØÖ·
-//½»²æÊ±·¢ËÍµÄÊÇ0
-//Æ½ÐÐÊ±·¢ËÍµÄÊÇ1
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½STM32F103CBU6
+//ï¿½Þ¸ï¿½ï¿½ï¿½2021/11/20ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¶È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¹ï¿½ï¿½Ü£ï¿½
+//ï¿½Þ¸ï¿½ï¿½ï¿½2021/11/16ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½heatï¿½ï¿½ï¿½Ü£ï¿½Î´ï¿½ï¿½ï¿½ï¿½ï¿½Ô£ï¿½
+//ï¿½Þ¸ï¿½ï¿½ï¿½2021/11/1ï¿½ï¿½ï¿½ï¿½ï¿½Ú²ï¿½8Mï¿½ï¿½Æµï¿½ï¿½64Mï¿½ï¿½
+//ï¿½ï¿½ï¿½ï¿½ï¿½Ú¶ï¿½ï¿½Í¨ï¿½Å°æ±¾
+//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½finalï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+//Ð´ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½Ö·ï¿½Í¼ï¿½ï¿½ï¿½ï¿½ï¿½Ö·
+//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Íµï¿½ï¿½ï¿½0
+//Æ½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½Íµï¿½ï¿½ï¿½1
 #define WRITE_START_ADDR ((uint32_t)0x08009000)
 #define WRITE_END_ADDR ((uint32_t)0x0800C000)
 
-uchar oswctlcomd,readstcomd,readbitcomd,readoswcmd,switchover,readtem;//ÃüÁî
+uchar oswctlcomd,readstcomd,readbitcomd,readoswcmd,switchover,readtem;//ï¿½ï¿½ï¿½ï¿½
 
-//ÅÐ¶ÏºóµÄ¿ØÖÆ×Ö
+//ï¿½Ð¶Ïºï¿½Ä¿ï¿½ï¿½ï¿½ï¿½ï¿½
 uchar oswctr1,oswctr2,oswctr3,oswctr4,oswctr5,oswctr6,oswctr7,oswctr8,oswctr9,oswctr10,oswctr11,oswctr12;
-uchar rcount;//½ÓÊÜ×ÖÊýÅÐ¶Ï
-uchar rbyte1,rbyte2,rbyte3,rbyte4;//1:°åºÅ 2:12-5 3:4-1 4:CtlCmd
+uchar rcount;//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+uchar rbyte1,rbyte2,rbyte3,rbyte4;//1:ï¿½ï¿½ï¿½ 2:12-5 3:4-1 4:CtlCmd
 uchar sbyte1,sbyte2,sbyte3;//same
 uchar oswst1,oswst2;
 uchar adcount;
-uchar swtime;//ÇÐ»»×´Ì¬´ÎÊý
-uchar basictime;//Âö³å³¤¶È
+uchar swtime;//ï¿½Ð»ï¿½×´Ì¬ï¿½ï¿½ï¿½ï¿½
+uchar basictime;//ï¿½ï¿½ï¿½å³¤ï¿½ï¿½
 uchar comdok;
-uchar temp[3]={0};//flashÔÝ´æ
-uchar panel_number;//°å×Ó±àºÅ
-uchar xcom_flag;//ÃüÁî¸ñÊ½¿ØÖÆ£¬Èç¹ûÊÇxcomÎª1£¬ÉÏÎ»»úÔòÎª0
+uchar temp[3]={0};//flashï¿½Ý´ï¿½
+uchar panel_number;//ï¿½ï¿½ï¿½Ó±ï¿½ï¿½
+uchar xcom_flag;//ï¿½ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½Æ£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½xcomÎª1ï¿½ï¿½ï¿½ï¿½Î»ï¿½ï¿½ï¿½ï¿½Îª0
 uchar heat_time;
 uint16_t ADC_ConvertedValue;
 uchar add_flag;
 uchar heat_time_new;
 uchar adc_counter;
 
-//ÉèÖÃÆµÂÊÎª64M
+//ï¿½ï¿½ï¿½ï¿½Æµï¿½ï¿½Îª64M
 void RCC_Configuration(void)
 {
 	__IO uint32_t HSIStartUpStatus = 0;
@@ -57,14 +57,14 @@ void RCC_Configuration(void)
 }
 }
 
-//Ã»ÓÐÍâ½Ó¾§ÕñËùÒÔ²ÉÓÃµÄÊÇÄÚ²¿¾§Õñ8M£¬¾­·ÖÆµµÃµ½µÄ64M
+//Ã»ï¿½ï¿½ï¿½ï¿½Ó¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô²ï¿½ï¿½Ãµï¿½ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½8Mï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æµï¿½Ãµï¿½ï¿½ï¿½64M
 void BASIC_TIM_Config(void)
 {
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 
-	//ÇÐ»»Âö³å20*10 = 200us
+	//ï¿½Ð»ï¿½ï¿½ï¿½ï¿½ï¿½20*10 = 200us
 	TIM_DeInit(TIM2);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);//¿ªÆôÊ±ÖÓ
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	TIM_InternalClockConfig(TIM2);
 	TIM_TimeBaseStructure.TIM_Period=20;//20us
 	TIM_TimeBaseStructure.TIM_Prescaler= 63;//64M/64
@@ -75,9 +75,9 @@ void BASIC_TIM_Config(void)
 	TIM_ITConfig(TIM2,TIM_IT_Update,ENABLE);
 	TIM_ARRPreloadConfig(TIM2, DISABLE);
 	
-	//¼ÓÈÈÖÜÆÚ2000ms
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2000ms
 	TIM_DeInit(TIM3);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);//¿ªÆôÊ±ÖÓ
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	TIM_InternalClockConfig(TIM3);
 	TIM_TimeBaseStructure.TIM_Period=2000;//2ms
 	TIM_TimeBaseStructure.TIM_Prescaler= 63;//64/64
@@ -88,9 +88,9 @@ void BASIC_TIM_Config(void)
 	TIM_ITConfig(TIM3,TIM_IT_Update,ENABLE);
 	TIM_ARRPreloadConfig(TIM3, DISABLE);
 		
-	//¼ÓÈÈÂö³å20us(Êµ¼Ê³¤¶È²»Ò»ÖÂ)
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½20us(Êµï¿½Ê³ï¿½ï¿½È²ï¿½Ò»ï¿½ï¿½)
 	TIM_DeInit(TIM4);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);//¿ªÆôÊ±ÖÓ
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	TIM_InternalClockConfig(TIM4);
 	TIM_TimeBaseStructure.TIM_Period=53;//20us
 	TIM_TimeBaseStructure.TIM_Prescaler= 63;//64/64
@@ -129,95 +129,95 @@ static void NVIC_Configuration(void)
 {
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-	//Ç¶Ì×ÖÐ¶Ï¿ØÖÆÆ÷×éÑ¡Ôñ
+	//Ç¶ï¿½ï¿½ï¿½Ð¶Ï¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ¡ï¿½ï¿½
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-	//ÅäÖÃUSARTÎªÖÐ¶ÏÔ´
+	//ï¿½ï¿½ï¿½ï¿½USARTÎªï¿½Ð¶ï¿½Ô´
 	NVIC_InitStructure.NVIC_IRQChannel = DEBUG_USART_IRQ;
-	//ÇÀ¶ÏÓÅÏÈ¼¶
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-	//×ÓÓÅÏÈ¼¶
+	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	//Ê¹ÄÜÖÐ¶Ï
+	//Ê¹ï¿½ï¿½ï¿½Ð¶ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	//³õÊ¼»¯ÅäÖÃNVIC
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NVIC
 	NVIC_Init(&NVIC_InitStructure);
 
-	//ÅäÖÃ¶¨Ê±Æ÷2ÎªÖÐ¶ÏÔ´
+	//ï¿½ï¿½ï¿½Ã¶ï¿½Ê±ï¿½ï¿½2Îªï¿½Ð¶ï¿½Ô´
 	NVIC_InitStructure.NVIC_IRQChannel = BASIC_TIM_IRQ ;
-	//ÇÀÕ¼ÓÅÏÈ¼¶
+	//ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½È¼ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
-	//×ÓÓÅÏÈ¼¶
+	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	//Ê¹ÄÜÖÐ¶Ï
+	//Ê¹ï¿½ï¿½ï¿½Ð¶ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	//³õÊ¼»¯ÅäÖÃNVIC
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NVIC
 	NVIC_Init(&NVIC_InitStructure);
 	
-	//ÅäÖÃ¶¨Ê±Æ÷3ÎªÖÐ¶ÏÔ´
-	//¸ºÔðHeat
+	//ï¿½ï¿½ï¿½Ã¶ï¿½Ê±ï¿½ï¿½3Îªï¿½Ð¶ï¿½Ô´
+	//ï¿½ï¿½ï¿½ï¿½Heat
 	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn ;
-	//ÇÀÕ¼ÓÅÏÈ¼¶
+	//ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½È¼ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
-	//×ÓÓÅÏÈ¼¶
+	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-	//Ê¹ÄÜÖÐ¶Ï
+	//Ê¹ï¿½ï¿½ï¿½Ð¶ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	//³õÊ¼»¯ÅäÖÃNVIC
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NVIC
 	NVIC_Init(&NVIC_InitStructure);
 	
-	//ÅäÖÃ¶¨Ê±Æ÷4ÎªÖÐ¶ÏÔ´
-	//¸ºÔðHeat
+	//ï¿½ï¿½ï¿½Ã¶ï¿½Ê±ï¿½ï¿½4Îªï¿½Ð¶ï¿½Ô´
+	//ï¿½ï¿½ï¿½ï¿½Heat
 	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn ;
-	//ÇÀÕ¼ÓÅÏÈ¼¶
+	//ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½È¼ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
-	//×ÓÓÅÏÈ¼¶
+	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	//Ê¹ÄÜÖÐ¶Ï
+	//Ê¹ï¿½ï¿½ï¿½Ð¶ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	//³õÊ¼»¯ÅäÖÃNVIC
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NVIC
 	NVIC_Init(&NVIC_InitStructure);
 	
-	//ÅäÖÃADCÎªÖÐ¶ÏÔ´
+	//ï¿½ï¿½ï¿½ï¿½ADCÎªï¿½Ð¶ï¿½Ô´
 	NVIC_InitStructure.NVIC_IRQChannel = ADC1_2_IRQn;
-	//ÇÀÕ¼ÓÅÏÈ¼¶Îª1
+	//ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½È¼ï¿½Îª1
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
-	//×ÓÓÅÏÈ¼¶Îª1
+	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½Îª1
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;
-	//Ê¹ÄÜÖÐ¶Ï
+	//Ê¹ï¿½ï¿½ï¿½Ð¶ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-	//³õÊ¼»¯ÅäÖÃNVIC
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NVIC
 	NVIC_Init(&NVIC_InitStructure);
 	
 	/*
-	//ÅäÖÃÖÐ¶ÏÔ´
+	//ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½Ô´
 	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
-	//ÇÀÕ¼ÓÅÏÈ¼¶Îª1
+	//ï¿½ï¿½Õ¼ï¿½ï¿½ï¿½È¼ï¿½Îª1
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
-	//×ÓÓÅÏÈ¼¶Îª1
+	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½Îª1
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
-	//Ê¹ÄÜÖÐ¶Ï
+	//Ê¹ï¿½ï¿½ï¿½Ð¶ï¿½
 	NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
-	//³õÊ¼»¯ÅäÖÃNVIC
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½NVIC
 	NVIC_Init(&NVIC_InitStructure);
 	*/
 }
 
 
-//Íâ²¿ÖÐ¶ÏÅäÖÃ
+//ï¿½â²¿ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½
 /*
 void EXTI_Key_Config(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
 	EXTI_InitTypeDef EXTI_InitStructure;
-	//Ê±ÖÓÅäÖÃ
+	//Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	RCC_APB2PeriphClockCmd((RCC_APB2Periph_GPIOA|RCC_APB2Periph_AFIO),ENABLE);
-	//NVICÅäÖÃ
+	//NVICï¿½ï¿½ï¿½ï¿½
 	NVIC_Configuration();
-	//´®¿ÚÅäÖÃ
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_13;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-	//ÖÐ¶ÏÅäÖÃ
+	//ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½
 	GPIO_EXTILineConfig(GPIO_PortSourceGPIOA,	GPIO_PinSource13);
 	EXTI_InitStructure.EXTI_Line = EXTI_Line13;
 	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
@@ -232,98 +232,98 @@ void USART_Config(void)
 	GPIO_InitTypeDef GPIO_InitStructure;
 	USART_InitTypeDef USART_InitStructure;
 
-	//´ò¿ª´®¿ÚGPIOµÄÊ±ÖÓ
+	//ï¿½ò¿ª´ï¿½ï¿½ï¿½GPIOï¿½ï¿½Ê±ï¿½ï¿½
 	DEBUG_USART_GPIO_APBxClkCmd(DEBUG_USART_GPIO_CLK, ENABLE);
 
-	//´ò¿ª´®¿ÚÍâÉèµÄÊ±ÖÓ
+	//ï¿½ò¿ª´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	DEBUG_USART_APBxClkCmd(DEBUG_USART_CLK, ENABLE);
 
-	//½«USART TxÅäÖÃÎªÍÆÍì¸´ÓÃ
+	//ï¿½ï¿½USART Txï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ì¸´ï¿½ï¿½
 	GPIO_InitStructure.GPIO_Pin = DEBUG_USART_TX_GPIO_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(DEBUG_USART_TX_GPIO_PORT, &GPIO_InitStructure);
 
-	//½«USART RxÅäÖÃÉÏÀ­ÊäÈë
+	//ï¿½ï¿½USART Rxï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	GPIO_InitStructure.GPIO_Pin = DEBUG_USART_RX_GPIO_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;
 	GPIO_Init(DEBUG_USART_RX_GPIO_PORT, &GPIO_InitStructure);
 
-	//ÅäÖÃ´®¿ÚµÄ¹¤×÷²ÎÊý
-	//ÅäÖÃ²¨ÌØÂÊ
+	//ï¿½ï¿½ï¿½Ã´ï¿½ï¿½ÚµÄ¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	//ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½
 	USART_InitStructure.USART_BaudRate = DEBUG_USART_BAUDRATE;
-	//ÅäÖÃÊý¾Ý×Ö³¤
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö³ï¿½
 	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-	//ÅäÖÃÍ£Ö¹Î»
+	//ï¿½ï¿½ï¿½ï¿½Í£Ö¹Î»
 	USART_InitStructure.USART_StopBits = USART_StopBits_1;
-	//ÅäÖÃÐ£ÑéÎ»
+	//ï¿½ï¿½ï¿½ï¿½Ð£ï¿½ï¿½Î»
 	USART_InitStructure.USART_Parity = USART_Parity_No ;
-	//ÅäÖÃÓ²¼þÁ÷¿ØÖÆ
+	//ï¿½ï¿½ï¿½ï¿½Ó²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	USART_InitStructure.USART_HardwareFlowControl =
 	USART_HardwareFlowControl_None;
-	//ÅäÖÃ¹¤×÷Ä£Ê½£¬ÊÕ·¢Ò»Æð
+	//ï¿½ï¿½ï¿½Ã¹ï¿½ï¿½ï¿½Ä£Ê½ï¿½ï¿½ï¿½Õ·ï¿½Ò»ï¿½ï¿½
 	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
 	//USART_InitStructure.USART_Mode = USART_Mode_Rx ;
-	//Íê³É´®¿Ú³õÊ¼»¯
+	//ï¿½ï¿½É´ï¿½ï¿½Ú³ï¿½Ê¼ï¿½ï¿½
 	USART_Init(DEBUG_USARTx, &USART_InitStructure);
-	//´®¿ÚÓÅÏÈ¼¶ÅäÖÃ
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ï¿½ï¿½ï¿½ï¿½
 	NVIC_Configuration();
-	//Ê¹ÄÜ´®¿Ú½ÓÊÜÖÐ¶Ï
+	//Ê¹ï¿½Ü´ï¿½ï¿½Ú½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
 	USART_ITConfig(DEBUG_USARTx, USART_IT_RXNE, ENABLE);
 
-	//Ê¹ÄÜ´®¿Ú
+	//Ê¹ï¿½Ü´ï¿½ï¿½ï¿½
 	USART_Cmd(DEBUG_USARTx, ENABLE);
 }
 
 void ADC_Config(void)
 {
 	ADC_InitTypeDef ADC_InitStructure;
-	//´ò¿ªÊ±ÖÓ
+	//ï¿½ï¿½Ê±ï¿½ï¿½
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_ADC1, ENABLE);
-	//Ö»Ê¹ÓÃÒ»¸öADC,¶ÀÁ¢Ä£Ê½
+	//Ö»Ê¹ï¿½ï¿½Ò»ï¿½ï¿½ADC,ï¿½ï¿½ï¿½ï¿½Ä£Ê½
 	ADC_InitStructure.ADC_Mode = ADC_Mode_Independent;
-	//½ûÓÃÉ¨ÃèÄ£Ê½
+	//ï¿½ï¿½ï¿½ï¿½É¨ï¿½ï¿½Ä£Ê½
 	ADC_InitStructure.ADC_ScanConvMode = DISABLE ;
-	//Á¬Ðø×ª»»Ä£Ê½
+	//ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½Ä£Ê½
 	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE;
-	//½ûÓÃÍâ²¿´¥·¢
+	//ï¿½ï¿½ï¿½ï¿½ï¿½â²¿ï¿½ï¿½ï¿½ï¿½
 	ADC_InitStructure.ADC_ExternalTrigConv = ADC_ExternalTrigConv_None;
-	//ÓÒ±ß¶ÔÆë
+	//ï¿½Ò±ß¶ï¿½ï¿½ï¿½
 	ADC_InitStructure.ADC_DataAlign = ADC_DataAlign_Right;
-	//ÉèÖÃ×ª»»Í¨µÀÊýÁ¿
+	//ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½Í¨ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	ADC_InitStructure.ADC_NbrOfChannel = 1;
-	//³õÊ¼»¯ADC
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ADC
 	ADC_Init(ADC1, &ADC_InitStructure);
-	//ÉèÖÃ8·Ö·ÖÆµ£¬¼´64/8=8Mhz
+	//ï¿½ï¿½ï¿½ï¿½8ï¿½Ö·ï¿½Æµï¿½ï¿½ï¿½ï¿½64/8=8Mhz
 	RCC_ADCCLKConfig(RCC_PCLK2_Div8);
-	//ÉèÖÃ²ÉÑùÖÜÆÚ239.5
+	//ï¿½ï¿½ï¿½Ã²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½239.5
 	ADC_RegularChannelConfig(ADC1, ADC_Channel_16, 1, ADC_SampleTime_239Cycles5);
-	//ÉèÖÃÖÐ¶Ï
+	//ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
 	ADC_ITConfig(ADC1, ADC_IT_EOC, ENABLE);
 	
 	ADC_TempSensorVrefintCmd(ENABLE);
-	//¿ªÆôADC
+	//ï¿½ï¿½ï¿½ï¿½ADC
 	ADC_Cmd(ADC1, ENABLE);
 	//Ð£×¼
 	ADC_ResetCalibration(ADC1);
 	while (ADC_GetResetCalibrationStatus(ADC1));
 	ADC_StartCalibration(ADC1);
 	while (ADC_GetCalibrationStatus(ADC1));
-	//Èí¼þ´¥·¢
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	ADC_SoftwareStartConvCmd(ADC1, ENABLE);
 }
 
 
-//·¢ËÍµ¥×Ö½Ú
+//ï¿½ï¿½ï¿½Íµï¿½ï¿½Ö½ï¿½
 void Usart_SendByte( USART_TypeDef * pUSARTx, uchar ch)
 {
-	//·¢ËÍÒ»¸ö×Ö½ÚÊý¾Ý
+	//ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½Ö½ï¿½ï¿½ï¿½ï¿½ï¿½
 	USART_SendData(pUSARTx,ch);
-	//µÈ´ý·¢ËÍ¼Ä´æÆ÷Îª¿Õ
+	//ï¿½È´ï¿½ï¿½ï¿½ï¿½Í¼Ä´ï¿½ï¿½ï¿½Îªï¿½ï¿½
 	while (USART_GetFlagStatus(pUSARTx, USART_FLAG_TXE) == RESET);
 }
 
-//·¢ËÍ×Ö·û´®
+//ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½
 void Usart_SendString( USART_TypeDef * pUSARTx, char *str)
 {
 	unsigned int k=0;
@@ -334,14 +334,14 @@ void Usart_SendString( USART_TypeDef * pUSARTx, char *str)
 	k++;
 	} while (*(str + k)!='\0');
 
-	//µÈ´ý·¢ËÍÍê³É
+	//ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 	while (USART_GetFlagStatus(pUSARTx,USART_FLAG_TC)==RESET) 
 	{}
 }
 
 void GPIO_CONFIG(void)
 {
-	//³õÊ¼»¯²¢´ò¿ªÊ±ÖÓ
+	//ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 	GPIO_InitTypeDef GPIO_InitStructure;
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA,ENABLE);
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOB,ENABLE);
@@ -480,19 +480,19 @@ void GPIO_CONFIG(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 	
-	//Ê¹ÄÜÐÅºÅ¶Ë¿Ú
+	//Ê¹ï¿½ï¿½ï¿½ÅºÅ¶Ë¿ï¿½
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_11;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 	
-	//Í¬²½ÐÅºÅ¶Ë¿Ú
+	//Í¬ï¿½ï¿½ï¿½ÅºÅ¶Ë¿ï¿½
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
 
-/* TX¸´ÓÃ
+/* TXï¿½ï¿½ï¿½ï¿½
 	//synp
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_9;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
@@ -536,7 +536,7 @@ void oswststore(void)
 	FLASH_WriteByte(WRITE_START_ADDR,temp);
 }
 
-/* ÔÚÖÐ¶ÏÀïÃæÖ´ÐÐ
+/* ï¿½ï¿½ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½Ö´ï¿½ï¿½
 void command_process()
 {
 	if(switchover==1)
@@ -636,12 +636,12 @@ void command_process()
  }
  */
 
-//¸Ä±ä¼ÓÈÈÂö¿í
+//ï¿½Ä±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 void TIM4_redo(uchar add_f, uchar heat_t)
 {
 		TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 		TIM_DeInit(TIM4);
-		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);//¿ªÆôÊ±ÖÓ
+		RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);//ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 		TIM_InternalClockConfig(TIM4);
 		TIM_TimeBaseStructure.TIM_Period=(add_f-0x05)*10+heat_t;//20us
 		TIM_TimeBaseStructure.TIM_Prescaler= 63;//64/64
@@ -655,7 +655,7 @@ void TIM4_redo(uchar add_f, uchar heat_t)
  
 void init(void)
 {
-	panel_number = 0x00;//°å×Ó±àºÅ
+	panel_number = 0x00;//ï¿½ï¿½ï¿½Ó±ï¿½ï¿½
 	RCC_Configuration();
 	GPIO_CONFIG();
 	BASIC_TIM_Config();
@@ -697,7 +697,6 @@ int main(void)
 			if (add_flag != rbyte4)
 			{add_flag = rbyte4;TIM4_redo(add_flag,heat_time);}
 		}
-	
 		/*
 		if (ADC_ConvertedValue > 2070)
 		{
