@@ -61,9 +61,9 @@ void d_us(u16 time)
 
 void Usart_SendByte_IN( USART_TypeDef * pUSARTx, uchar ch)
 {
-	//����һ���ֽ�����
+
 	USART_SendData(pUSARTx,ch);
-	//�ȴ����ͼĴ���Ϊ��
+
 	while (USART_GetFlagStatus(pUSARTx, USART_FLAG_TXE) == RESET);
 }
 
@@ -166,7 +166,7 @@ void command_process_IN()
 	oswctlcomd=0;
  }
 
-//�ⲿ�жϹ��ܣ�������Ҫ���á�
+
 
 void EXTI15_10_IRQHandler(void)
 {
@@ -199,7 +199,7 @@ void EXTI15_10_IRQHandler(void)
 
 
 
-//����ͨ�Ź���
+
 void DEBUG_USART_IRQHandler(void)
 {
 	uint8_t tem;
