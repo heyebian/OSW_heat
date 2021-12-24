@@ -25,6 +25,8 @@ uint16_t ADC_ConvertedValue;
 uchar add_flag;
 uchar heat_time_new;
 uchar adc_counter;
+uchar heat_time_start;
+uint16_t ADC_summer_0_14,ADC_summer_15_29;
 
 
 void RCC_Configuration(void)
@@ -657,6 +659,8 @@ void init(void)
 	add_flag = 0x05;
 	rbyte4 = 0x05;
 	adc_counter = 0x00;
+	ADC_summer_0_14 = 0;
+	ADC_summer_15_29 = 0;
 }
 	
 int main(void)
@@ -666,22 +670,70 @@ int main(void)
 	while(1)
 	{
 		
-		/*
 		ADC_Cmd(ADC1, ENABLE);
 		delay_ms(2000);
 		if (adc_counter == 30)
 		{
-			heat_time = 0x20;
+			sbyte1=ADC_summer_0_14>>8;
+			sbyte2=ADC_summer_0_14;
+			Usart_SendByte(DEBUG_USARTx,sbyte1);
+			Usart_SendByte(DEBUG_USARTx,sbyte2);
+			ADC_summer_0_14 /= 15;
+			ADC_summer_15_29 /= 15;
+			ADC_summer_0_14 = (ADC_summer_0_14+ADC_summer_15_29) / 2;
+			
+			sbyte1=ADC_summer_0_14>>8;
+			sbyte2=ADC_summer_0_14;
+			Usart_SendByte(DEBUG_USARTx,sbyte1);
+			Usart_SendByte(DEBUG_USARTx,sbyte2);
+			//Cal the current temperature
+
+			if (ADC_summer_0_14 > 2080) //-40
+			{heat_time_new = 0x8E;} //110us
+			else if (ADC_summer_0_14 > 2070) //-35
+			{heat_time_new = 0x84;} //100us
+			else if (ADC_summer_0_14 > 2040) //-30
+			{heat_time_new = 0x84;} //100us
+			else if (ADC_summer_0_14 > 2010) //-25
+			{heat_time_new = 0x7A;} //90us
+			else if (ADC_summer_0_14 > 1990) //-20
+			{heat_time_new = 0x7A;} //90us
+			else if (ADC_summer_0_14 > 1950) //-15
+			{heat_time_new = 0x70;} //80us
+			else if (ADC_summer_0_14 > 1920) //-10
+			{heat_time_new = 0x66;} //70us
+			else if (ADC_summer_0_14 > 1900) //-5
+			{heat_time_new = 0x5C;} //60us
+			else if (ADC_summer_0_14 > 1880) //0
+			{heat_time_new = 0x52;} //50us
+			else if (ADC_summer_0_14 > 1850) //10
+			{heat_time_new = 0x48;} //40us
+			else if (ADC_summer_0_14 > 1760) //25
+			{heat_time_new = 0x3E;} //30us
+			else 
+			{heat_time_new = 0x20;}
+
+			heat_time_start = heat_time_new;
+			heat_time = heat_time_new;
 			TIM4_redo(add_flag,heat_time);
 			adc_counter += 1;
 			TIM_Cmd(TIM3,ENABLE);
 		}
 		else if (adc_counter > 30)
 		{
-			if (add_flag != rbyte4)
-			{add_flag = rbyte4;TIM4_redo(add_flag,heat_time);}
+			if (ADC_ConvertedValue < 1760)
+			{heat_time_new = 0x20;}
+			else if (ADC_ConvertedValue < 1850)
+			{heat_time_new = 0x3E;}
+			else if (ADC_ConvertedValue < 1870)
+			{heat_time_new = 0x48;}
+			else if (ADC_ConvertedValue > 1890)
+			{heat_time_new = heat_time_start;}
+			
+			if ((add_flag != rbyte4)|(heat_time != heat_time_new))
+			{add_flag = rbyte4;heat_time = heat_time_new;
+			TIM4_redo(add_flag,heat_time);}
 		}
-		*/
 		
 		/*
 		if (ADC_ConvertedValue > 2070)

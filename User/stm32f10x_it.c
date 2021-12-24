@@ -39,6 +39,7 @@ extern uchar oswctr1,oswctr2,oswctr3,oswctr4,oswctr5,oswctr6,oswctr7,oswctr8,osw
 extern uchar sbyte1,sbyte2,sbyte3;
 extern uchar heat_time;
 extern uint16_t ADC_ConvertedValue;
+extern uint16_t ADC_summer_0_14,ADC_summer_15_29;
 extern uchar adc_counter;
 uchar now_st,next_st;
 
@@ -652,6 +653,10 @@ void ADC1_2_IRQHandler(void)
 		ADC_ConvertedValue = ADC_GetConversionValue(ADC1);
 		if (adc_counter < 30)
 		{
+			if (adc_counter < 15)
+			{ADC_summer_0_14 += ADC_ConvertedValue;}
+			else
+			{ADC_summer_15_29 += ADC_ConvertedValue;}
 			adc_counter += 1;
 			sbyte1=ADC_ConvertedValue>>8;
 			sbyte2=ADC_ConvertedValue;
