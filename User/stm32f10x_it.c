@@ -42,6 +42,10 @@ extern uint16_t ADC_ConvertedValue;
 extern uint16_t ADC_summer_0_14,ADC_summer_15_29;
 extern uchar adc_counter;
 uchar now_st,next_st;
+uint16_t start_heat;
+extern uint16_t adc_5value_sum;
+extern uchar adc_num;
+extern uint16_t adc_5value_aver;
 
 void d_ms(u16 time)
 {    
@@ -52,13 +56,6 @@ void d_ms(u16 time)
 		while(i--) ;    
 	}
 }
-
-void d_us(u16 time)
-{    
-	time = time*8;
-	while(time--);    
-}
-
 
 void Usart_SendByte_IN( USART_TypeDef * pUSARTx, uchar ch)
 {
@@ -167,28 +164,33 @@ void command_process_IN()
 	oswctlcomd=0;
  }
 
-
-
+//EXTI
+//Add the state for each entry
 void EXTI15_10_IRQHandler(void)
 {
 	EXTI_InitTypeDef EXTI_InitStructure;
 	if (EXTI_GetITStatus(EXTI_Line12) != RESET) 
 		{
+			//Close the EXIT to avoid the shake
 			EXTI_InitStructure.EXTI_Line = EXTI_Line12;
 			EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 			EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
 			EXTI_InitStructure.EXTI_LineCmd = DISABLE;
 			EXTI_Init(&EXTI_InitStructure);
 			d_ms(100);
+			
 			oswctlcomd=1;
-			now_st = oswst2 & 0x3f;
-			if (now_st == 63)
+			now_st = oswst2 & 0x3f; //get the current state
+			if (now_st == 63) //The maxium is 63
 			{next_st = 0;}
 			else {next_st = now_st+1;}
+			//According to bit state, get every switch state
 			rbyte2=(next_st & 0x3C)>>2;
 			rbyte3=(next_st & 0x3F)|(next_st << 6);
+			//Changed the state
 			if(oswctlcomd==1)
 			{command_process_IN();}
+			//Open the EXIT
 			EXTI_InitStructure.EXTI_Line = EXTI_Line12;
 			EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
 			EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
@@ -209,7 +211,7 @@ void DEBUG_USART_IRQHandler(void)
 	if (rcount==0)
 	{
 		rbyte1=tem;rcount=1;
-		if(rbyte1==panel_number)//sn:00
+		if(rbyte1==panel_number)//Judge whether the pannel number is true
 		{comdok=1;}
 		else
 		{comdok=0;}
@@ -303,7 +305,6 @@ void DEBUG_USART_IRQHandler(void)
 	} 
 	else if(readtem==1)
 	{
-		
 		sbyte1=ADC_ConvertedValue>>8;
 		sbyte2=ADC_ConvertedValue;
 		Usart_SendByte_IN(DEBUG_USARTx,sbyte1);
@@ -653,6 +654,12 @@ void ADC1_2_IRQHandler(void)
 		ADC_ConvertedValue = ADC_GetConversionValue(ADC1);
 		if (adc_counter < 30)
 		{
+			// compute the ambient temperature
+			if (adc_counter == 2)
+			{
+				start_heat = ADC_summer_0_14 / 2;
+				if (start_heat > 1850){TIM_Cmd(TIM3, ENABLE);}
+			}
 			if (adc_counter < 15)
 			{ADC_summer_0_14 += ADC_ConvertedValue;}
 			else
@@ -662,6 +669,18 @@ void ADC1_2_IRQHandler(void)
 			sbyte2=ADC_ConvertedValue;
 			Usart_SendByte_IN(DEBUG_USARTx,sbyte1);
 			Usart_SendByte_IN(DEBUG_USARTx,sbyte2);
+		}
+		if (adc_counter > 30)
+		{
+			//compute the current temperature
+			adc_5value_sum += ADC_ConvertedValue;
+			adc_num += 1;
+			if (adc_num == 5)
+			{
+				adc_5value_aver = adc_5value_sum / 5;
+				adc_5value_sum = 0;
+				adc_num =0;
+			}
 		}
 		ADC_Cmd(ADC1, DISABLE);
 	}

@@ -1,34 +1,40 @@
 #include "stm32f10x.h"
 #include "my_own.h"
 
-
+//Modified in 12/28
+//Apply to STM32F103CBU6
 #define WRITE_START_ADDR ((uint32_t)0x08009000)
 #define WRITE_END_ADDR ((uint32_t)0x0800C000)
 
-uchar oswctlcomd,readstcomd,readbitcomd,readoswcmd,switchover,readtem;
+uchar oswctlcomd,readstcomd,readbitcomd,readoswcmd,switchover,readtem; //Command
 
-
-uchar oswctr1,oswctr2,oswctr3,oswctr4,oswctr5,oswctr6,oswctr7,oswctr8,oswctr9,oswctr10,oswctr11,oswctr12;
-uchar rcount;
-uchar rbyte1,rbyte2,rbyte3,rbyte4;
+uchar oswctr1,oswctr2,oswctr3,oswctr4,oswctr5,oswctr6,oswctr7,oswctr8,oswctr9,oswctr10,oswctr11,oswctr12; //Control every single switch
+uchar rcount; //Receive words' number
+uchar rbyte1,rbyte2,rbyte3,rbyte4; //same to the readme
 uchar sbyte1,sbyte2,sbyte3;
 uchar oswst1,oswst2;
 uchar adcount;
 uchar swtime;
 uchar basictime;
 uchar comdok;
-uchar temp[3]={0};
+uchar temp[3]={0}; //flash temp
 uchar panel_number;
-uchar xcom_flag;
-uchar heat_time;
-uint16_t ADC_ConvertedValue;
+uchar xcom_flag;//judge the command is from the XCOM or the SW-12 programm
+uchar heat_time;//save the current heat time
+uint16_t ADC_ConvertedValue; //save the ADC_converted value
 uchar add_flag;
-uchar heat_time_new;
-uchar adc_counter;
-uchar heat_time_start;
-uint16_t ADC_summer_0_14,ADC_summer_15_29;
+uchar heat_time_new; //Judge whether the heat time should be changed
+uchar adc_counter; //Cal the first 30 adc_converted process
+uchar heat_time_start; //Save the first heat time 
+uint16_t ADC_summer_0_14,ADC_summer_15_29; //to cal the ambient temperature
+uint16_t adc_5value_sum; //to cal the current temperature
+uint16_t adc_5value_aver;
+uchar adc_num; //every 5 adc results' aver as the current adc value
+uchar heat_time_max,heat_time_min;
 
-
+//Set the main frequency as 64M
+//Without the out crystal oscillator
+//Using the RC oscillator
 void RCC_Configuration(void)
 {
 	__IO uint32_t HSIStartUpStatus = 0;
@@ -51,11 +57,13 @@ void RCC_Configuration(void)
 }
 }
 
+//Set the basic TIM config
 void BASIC_TIM_Config(void)
 {
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 
-
+	//The single switch pulse
+	//The full pulse = Single Pulse * basictime
 	TIM_DeInit(TIM2);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM2, ENABLE);//
 	TIM_InternalClockConfig(TIM2);
@@ -68,7 +76,7 @@ void BASIC_TIM_Config(void)
 	TIM_ITConfig(TIM2,TIM_IT_Update,ENABLE);
 	TIM_ARRPreloadConfig(TIM2, DISABLE);
 	
-
+	//The heating cycle
 	TIM_DeInit(TIM3);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 	TIM_InternalClockConfig(TIM3);
@@ -81,10 +89,11 @@ void BASIC_TIM_Config(void)
 	TIM_ITConfig(TIM3,TIM_IT_Update,ENABLE);
 	TIM_ARRPreloadConfig(TIM3, DISABLE);
 		
+	//The heat time
 	TIM_DeInit(TIM4);
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM4, ENABLE);
 	TIM_InternalClockConfig(TIM4);
-	TIM_TimeBaseStructure.TIM_Period=53;//20us
+	TIM_TimeBaseStructure.TIM_Period=0x48;//20us
 	TIM_TimeBaseStructure.TIM_Prescaler= 63;//64/64
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -95,6 +104,7 @@ void BASIC_TIM_Config(void)
 	
 }
 
+//Write Halfword(2 bytes) to the Flash
 void FLASH_WriteByte(uint32_t addr , uchar *p)
 {
 	uint32_t HalfWord;
@@ -108,6 +118,7 @@ void FLASH_WriteByte(uint32_t addr , uchar *p)
 	FLASH_Lock();
 }
 
+//Read Halfword from the Flash
 void FLASH_ReadByte(uint32_t addr , uchar *p )
 {
 	uint8_t n;
@@ -117,12 +128,14 @@ void FLASH_ReadByte(uint32_t addr , uchar *p )
 	{*(p++)=*((uchar*)addr++);}
 }
 
+//Set the NVIC config
 static void NVIC_Configuration(void)
 {
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2); //Choose the Group 2(2 bit PreemptionPriority and 2 bit SubPriority)
+	
+  //Set the USART order
 	NVIC_InitStructure.NVIC_IRQChannel = DEBUG_USART_IRQ;
 
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
@@ -133,6 +146,7 @@ static void NVIC_Configuration(void)
 
 	NVIC_Init(&NVIC_InitStructure);
 
+	//Set the TIM2 order
 	NVIC_InitStructure.NVIC_IRQChannel = BASIC_TIM_IRQ ;
 
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
@@ -143,7 +157,7 @@ static void NVIC_Configuration(void)
 
 	NVIC_Init(&NVIC_InitStructure);
 	
-
+	//Set the TIM3 order
 	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn ;
 
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
@@ -154,7 +168,7 @@ static void NVIC_Configuration(void)
 
 	NVIC_Init(&NVIC_InitStructure);
 	
-
+	//Set the TIM4 order
 	NVIC_InitStructure.NVIC_IRQChannel = TIM4_IRQn ;
 
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2;
@@ -165,7 +179,7 @@ static void NVIC_Configuration(void)
 
 	NVIC_Init(&NVIC_InitStructure);
 	
-
+	//Set the ADC order
 	NVIC_InitStructure.NVIC_IRQChannel = ADC1_2_IRQn;
 
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 3;
@@ -176,7 +190,7 @@ static void NVIC_Configuration(void)
 
 	NVIC_Init(&NVIC_InitStructure);
 	
-
+	//Set the EXIT order
 	NVIC_InitStructure.NVIC_IRQChannel = EXTI15_10_IRQn;
 
 	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1;
@@ -186,12 +200,10 @@ static void NVIC_Configuration(void)
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 
 	NVIC_Init(&NVIC_InitStructure);
-
 }
 
 
-
-
+//Set the EXTI config
 void EXTI_Key_Config(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -200,7 +212,8 @@ void EXTI_Key_Config(void)
 	RCC_APB2PeriphClockCmd((RCC_APB2Periph_GPIOA|RCC_APB2Periph_AFIO),ENABLE);
 
 	NVIC_Configuration();
-
+	
+	//GPIOA 12 as the EXTI
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_12;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
@@ -214,6 +227,7 @@ void EXTI_Key_Config(void)
 }
 
 
+//Set the USART config
 void USART_Config(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
@@ -259,6 +273,7 @@ void USART_Config(void)
 	USART_Cmd(DEBUG_USARTx, ENABLE);
 }
 
+//Set the ADC config
 void ADC_Config(void)
 {
 	ADC_InitTypeDef ADC_InitStructure;
@@ -298,7 +313,7 @@ void ADC_Config(void)
 }
 
 
-
+//Sent Byte to the Usart
 void Usart_SendByte( USART_TypeDef * pUSARTx, uchar ch)
 {
 
@@ -308,21 +323,7 @@ void Usart_SendByte( USART_TypeDef * pUSARTx, uchar ch)
 }
 
 
-void Usart_SendString( USART_TypeDef * pUSARTx, char *str)
-{
-	unsigned int k=0;
-	
-	do 
-	{
-	Usart_SendByte( pUSARTx, *(str + k) );
-	k++;
-	} while (*(str + k)!='\0');
-
-
-	while (USART_GetFlagStatus(pUSARTx,USART_FLAG_TC)==RESET) 
-	{}
-}
-
+//Set the GPIO config
 void GPIO_CONFIG(void)
 {
 
@@ -464,25 +465,12 @@ void GPIO_CONFIG(void)
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
 	GPIO_Init(GPIOC, &GPIO_InitStructure);
 	
-
+	//ENA
 	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_11;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(GPIOA, &GPIO_InitStructure);
-/*
 
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_12;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-*/
-/* 
-	//synp
-	GPIO_InitStructure.GPIO_Pin=GPIO_Pin_9;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-*/
 
 	PWR_BackupAccessCmd(ENABLE);
 	RCC_LSEConfig(RCC_LSE_OFF);
@@ -513,113 +501,8 @@ void delay_us(u16 time)
 	}
 }
 
-void oswststore(void)
-{
-	temp[0]=oswst1;
-	temp[1]=oswst2;
-	FLASH_WriteByte(WRITE_START_ADDR,temp);
-}
 
-/* 
-void command_process()
-{
-	if(switchover==1)
-	{if((rbyte2 & 0x08)==0)	 //12
-        oswctr12=0;
-	else oswctr12=1;
-	if((rbyte2 & 0x04)==0)//11
-        oswctr11=0;
-	else oswctr11=1;
-	if((rbyte2 & 0x02)==0)//10
-        oswctr10=0;
-	else oswctr10=1;
-	if((rbyte2 & 0x01)==0)//9
-        oswctr9=0;
-	else oswctr9=1;
-	if((rbyte3 & 0x80)==0)//8
-        oswctr8=0;
-	else oswctr8=1;
-	if((rbyte3 & 0x40)==0)//7
-        oswctr7=0;
-	else oswctr7=1;
-	if((rbyte3 & 0x20)==0)//6
-        oswctr6=0;
-	else oswctr6=1;
-	if((rbyte3 & 0x10)==0)//5
-        oswctr5=0;
-	else oswctr5=1;
-	if((rbyte3 & 0x08)==0)//4
-        oswctr4=0;
-	else oswctr4=1;
-	if((rbyte3 & 0x04)==0)//3
-        oswctr3=0;
-	else oswctr3=1;
-	if((rbyte3 & 0x02)==0)//2
-        oswctr2=0;
-	else oswctr2=1;
-	if((rbyte3 & 0x01)==0)//1
-        oswctr1=0;
-	else oswctr1=1;
-
-	if(oswctr12)  //no.12
-	{GPIO_SetBits(IN12P);}
-	else  //no.12
-	{GPIO_SetBits(IN12N);}
-	if(oswctr11)  //no.11
-	{GPIO_SetBits(IN11P);}
-	else  //no.11
-	{GPIO_SetBits(IN11N);}
-	if(oswctr10)  //no.10
-	{GPIO_SetBits(IN10P);}
-	else  //no.10
-	{GPIO_SetBits(IN10N);}
-	if(oswctr9)  //no.9
-	{GPIO_SetBits(IN9P);}
-	else  //no.9
-	{GPIO_SetBits(IN9N);}
-	if(oswctr8)  //no.8
-	{GPIO_SetBits(IN8P);}
-	else  //no.8
-	{GPIO_SetBits(IN8N);}
-	if(oswctr7)  //no.7
-	{GPIO_SetBits(IN7P);}
-	else  //no.7
-	{GPIO_SetBits(IN7N);}
-	if(oswctr6)  //no.6
-	{GPIO_SetBits(IN6P);}
-	else  //no.6
-	{GPIO_SetBits(IN6N);}
-	if(oswctr5)  //no.5
-	{GPIO_SetBits(IN5P);}
-	else  //no.5
-	{GPIO_SetBits(IN5N);}
-	if(oswctr4)  //no.4
-	{GPIO_SetBits(IN4P);}
-	else  //no.4
-	{GPIO_SetBits(IN4N);}
-	if(oswctr3)  //no.3
-	{GPIO_SetBits(IN3P);}
-	else  //no.3
-	{GPIO_SetBits(IN3N);}
-	if(oswctr2)  //no.2
-	{GPIO_SetBits(IN2P);}
-	else  //no.2
-	{GPIO_SetBits(IN2N);}
-	if(oswctr1)  //no.1
-	{GPIO_SetBits(IN1P);}
-	else  //no.1
-	{GPIO_SetBits(IN1N);}
-
-	//GPIO_SetBits(GPIOA, GPIO_Pin_11);
-	TIM_Cmd(TIM2, ENABLE);
-	
-	switchover=0;
-  }
-	else;
-	oswctlcomd=0;
- }
- */
-
+//Reset the TIM4 (heat time)
 void TIM4_redo(uchar add_f, uchar heat_t)
 {
 		TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
@@ -634,6 +517,7 @@ void TIM4_redo(uchar add_f, uchar heat_t)
 		TIM_ClearFlag(TIM4, TIM_FLAG_Update);
 		TIM_ITConfig(TIM4,TIM_IT_Update,ENABLE);
 		TIM_ARRPreloadConfig(TIM4, DISABLE);
+		Usart_SendByte(DEBUG_USARTx,heat_t);
 }
  
 void init(void)
@@ -661,6 +545,9 @@ void init(void)
 	adc_counter = 0x00;
 	ADC_summer_0_14 = 0;
 	ADC_summer_15_29 = 0;
+	adc_num = 0;
+	adc_5value_sum = 0;
+	adc_5value_aver = 0;
 }
 	
 int main(void)
@@ -669,100 +556,72 @@ int main(void)
 	
 	while(1)
 	{
-		
 		ADC_Cmd(ADC1, ENABLE);
 		delay_ms(2000);
 		if (adc_counter == 30)
 		{
-			sbyte1=ADC_summer_0_14>>8;
-			sbyte2=ADC_summer_0_14;
-			Usart_SendByte(DEBUG_USARTx,sbyte1);
-			Usart_SendByte(DEBUG_USARTx,sbyte2);
 			ADC_summer_0_14 /= 15;
 			ADC_summer_15_29 /= 15;
 			ADC_summer_0_14 = (ADC_summer_0_14+ADC_summer_15_29) / 2;
+			adc_5value_aver = ADC_summer_0_14;
 			
 			sbyte1=ADC_summer_0_14>>8;
 			sbyte2=ADC_summer_0_14;
 			Usart_SendByte(DEBUG_USARTx,sbyte1);
 			Usart_SendByte(DEBUG_USARTx,sbyte2);
-			//Cal the current temperature
+			//compute the ambient temperature
 
 			if (ADC_summer_0_14 > 2080) //-40
-			{heat_time_new = 0x8E;} //110us
+			{heat_time_max = 0x98;heat_time_min = 0x7A;} //max:120us min:90us
 			else if (ADC_summer_0_14 > 2070) //-35
-			{heat_time_new = 0x84;} //100us
+			{heat_time_max = 0x8E;heat_time_min = 0x70;} //max:110us min:80us
 			else if (ADC_summer_0_14 > 2040) //-30
-			{heat_time_new = 0x84;} //100us
+			{heat_time_max = 0x8E;heat_time_min = 0x70;} //max:110us min:80us
 			else if (ADC_summer_0_14 > 2010) //-25
-			{heat_time_new = 0x7A;} //90us
+			{heat_time_max = 0x84;heat_time_min = 0x66;} //max:100us min:70us
 			else if (ADC_summer_0_14 > 1990) //-20
-			{heat_time_new = 0x7A;} //90us
+			{heat_time_max = 0x84;heat_time_min = 0x66;} //max:100us min:70us
 			else if (ADC_summer_0_14 > 1950) //-15
-			{heat_time_new = 0x70;} //80us
+			{heat_time_max = 0x7A;heat_time_min = 0x5C;} //max:90us min:60us
 			else if (ADC_summer_0_14 > 1920) //-10
-			{heat_time_new = 0x66;} //70us
+			{heat_time_max = 0x70;heat_time_min = 0x5C;} //max:80us min:60us
 			else if (ADC_summer_0_14 > 1900) //-5
-			{heat_time_new = 0x5C;} //60us
+			{heat_time_max = 0x66;heat_time_min = 0x52;} //max:70us min:50us
 			else if (ADC_summer_0_14 > 1880) //0
-			{heat_time_new = 0x52;} //50us
-			else if (ADC_summer_0_14 > 1850) //10
-			{heat_time_new = 0x48;} //40us
+			{heat_time_max = 0x5C;heat_time_min = 0x48;} //max:60us min:40us
+			else if (ADC_summer_0_14 > 1820) //15
+			{heat_time_max = 0x52;heat_time_min = 0x48;} //max:50us min:40us
 			else if (ADC_summer_0_14 > 1760) //25
-			{heat_time_new = 0x3E;} //30us
-			else 
-			{heat_time_new = 0x20;}
+			{heat_time_max = 0x48;heat_time_min = 0x3E;} //max:40us min:30us
+			else
+			{heat_time_max = 0x20;heat_time_min = 0x20;}
 
-			heat_time_start = heat_time_new;
-			heat_time = heat_time_new;
+			heat_time_start = heat_time_max;
+			heat_time = heat_time_max;
 			TIM4_redo(add_flag,heat_time);
 			adc_counter += 1;
 			TIM_Cmd(TIM3,ENABLE);
 		}
 		else if (adc_counter > 30)
 		{
-			if (ADC_ConvertedValue < 1760)
+			//according the current temperature adjust the heat time
+			if (adc_5value_aver < 1760)
 			{heat_time_new = 0x20;}
-			else if (ADC_ConvertedValue < 1850)
+			else if (adc_5value_aver < 1820)
 			{heat_time_new = 0x3E;}
-			else if (ADC_ConvertedValue < 1870)
+			else if (adc_5value_aver < 1850)
 			{heat_time_new = 0x48;}
-			else if (ADC_ConvertedValue > 1890)
-			{heat_time_new = heat_time_start;}
+			else if (adc_5value_aver < 1870)
+			{heat_time_new = heat_time_min;}
+			else if (adc_5value_aver >= 1870)
+			{heat_time_new = heat_time_max;}
 			
 			if ((add_flag != rbyte4)|(heat_time != heat_time_new))
 			{add_flag = rbyte4;heat_time = heat_time_new;
 			TIM4_redo(add_flag,heat_time);}
 		}
 		
-		/*
-		if (ADC_ConvertedValue > 2070)
-		{
-			heat_time_new = 0x9F;
-		}
-		else if (ADC_ConvertedValue > 2000)
-		{
-			heat_time_new = 0x7F;
-		}
-		else if (ADC_ConvertedValue > 1950)
-		{
-			heat_time_new = 0x5F;
-		}
-		else if (ADC_ConvertedValue > 1900)
-		{
-			heat_time_new = 0x4A;
-		}
-		else if (ADC_ConvertedValue > 1870)
-		{
-			heat_time_new = 0x34;
-		}
-		else
-		{
-			heat_time_new = 0x20;
-		}
-		*/
 
 	}
 	return 0;
 }
-
